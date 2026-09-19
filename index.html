@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NineHack</title>
+<style>
+  :root {
+    --bg:      #0f1117;
+    --surface: #1a1d27;
+    --border:  #2a2d3e;
+    --accent:  #7c3aed;
+    --accent2: #a855f7;
+    --green:   #22c55e;
+    --red:     #ef4444;
+    --yellow:  #f59e0b;
+    --text:    #e2e8f0;
+    --muted:   #64748b;
+    --r:       12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; padding: 24px 16px 40px;
+  }
+  .header {
+    width: 100%; max-width: 480px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  }
+  .logo {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; }
+  .header p  { font-size: 12px; color: var(--muted); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 18px;
+    width: 100%; max-width: 480px; margin-bottom: 12px;
+  }
+  .card h2 {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); margin-bottom: 14px;
+  }
+  label { font-size: 12px; color: var(--muted); margin-bottom: 5px; display: block; }
+  input, select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); padding: 9px 12px;
+    font-size: 14px; outline: none; margin-bottom: 10px;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  .btn {
+    width: 100%; padding: 13px; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: opacity .2s, transform .1s; margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:last-child { margin-bottom: 0; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-purple { background: var(--accent); color: #fff; }
+  .btn-green  { background: var(--green);  color: #000; }
+  .btn-red    { background: var(--red);    color: #fff; }
+  .btn-ghost  { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .status {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .b-off    { background: #1e293b; color: var(--muted); }
+  .b-conn   { background: #14532d; color: var(--green); }
+  .b-ready  { background: #3b0764; color: var(--accent2); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .proto-tag {
+    font-size: 10px; font-weight: 800; padding: 3px 8px;
+    border-radius: 4px; font-family: monospace; letter-spacing: 0.5px;
+  }
+  .t-modern { background: #1e1b4b; color: #a5b4fc; }
+  .t-legacy { background: #14532d; color: #86efac; }
+  .log {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    height: 200px; overflow-y: auto; padding: 10px 12px;
+    font-family: monospace; font-size: 12px; line-height: 1.8;
+  }
+  .li   { color: #94a3b8; }
+  .ls   { color: var(--green); }
+  .le   { color: var(--red); }
+  .lw   { color: var(--yellow); }
+  .lts  { color: var(--muted); margin-right: 6px; font-size: 11px; }
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+  .modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.75); backdrop-filter: blur(6px);
+    z-index: 99; align-items: center; justify-content: center;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 28px 24px;
+    max-width: 340px; width: 90%; text-align: center;
+  }
+  .modal .ico { font-size: 52px; margin-bottom: 12px; }
+  .modal h3   { font-size: 17px; margin-bottom: 8px; }
+  .modal p    { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+  .spin {
+    display: inline-block; width: 13px; height: 13px;
+    border: 2px solid var(--border); border-top-color: var(--accent2);
+    border-radius: 50%; animation: sp .7s linear infinite;
+  }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  #notSupported {
+    background: #1c1406; border: 1px solid #92400e;
+    border-radius: var(--r); padding: 16px; color: var(--yellow);
+    font-size: 13px; line-height: 1.6; max-width: 480px; width: 100%;
+    margin-bottom: 12px; display: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="notSupported">
+  &#x26A0; Web Bluetooth wird von diesem Browser nicht unterstuetzt.<br>
+  Benutze <strong>Chrome (Android/Desktop)</strong> oder <strong>Bluefy (iOS)</strong>.
+</div>
+
+<div class="header">
+  <div class="logo">&#x1F6F4;</div>
+  <div>
+    <h1>NineHack</h1>
+    <p>Ninebot / Segway BLE Tool</p>
+  </div>
+</div>
+
+<!-- Status -->
+<div class="card">
+  <div class="status">
+    <span class="badge b-off" id="badge"><span class="dot"></span><span id="badgeText">Getrennt</span></span>
+    <span id="protoTag"></span>
+  </div>
+  <div id="deviceInfo" style="display:none;">
+    <div style="font-size:11px;color:var(--muted);">Verbunden mit</div>
+    <div style="font-size:14px;font-weight:700;font-family:monospace;" id="deviceName"></div>
+  </div>
+</div>
+
+<!-- Config -->
+<div class="card" id="configCard">
+  <h2>Einstellungen</h2>
+  <label>Protokoll</label>
+  <select id="modeSelect">
+    <option value="auto">Auto-Erkennung</option>
+    <option value="legacy">Legacy (XOR/CRC8)</option>
+    <option value="modern">Modern (NbCrypto)</option>
+  </select>
+  <label>Key (Legacy)</label>
+  <input type="text" id="keyInput" value="4BKNwi77">
+  <button class="btn btn-purple" id="btnScan" onclick="doScan()">
+    &#x1F4F6; Scooter suchen &amp; verbinden
+  </button>
+</div>
+
+<!-- Controls -->
+<div class="card" id="controlCard" style="display:none;">
+  <h2>Steuerung</h2>
+  <div class="grid2">
+    <button class="btn btn-green" id="btnUnlock" onclick="doUnlock()" disabled>
+      &#x1F513; Entsperren
+    </button>
+    <button class="btn btn-red" id="btnLock" onclick="doLock()" disabled>
+      &#x1F512; Sperren
+    </button>
+  </div>
+  <div class="divider"></div>
+  <button class="btn btn-ghost" onclick="doDisconnect()">Trennen</button>
+</div>
+
+<!-- Log -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <h2 style="margin:0;">Log</h2>
+    <button class="btn btn-ghost" style="width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="document.getElementById('log').innerHTML=''">Leeren</button>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+
+<!-- Button Modal -->
+<div class="modal-bg" id="btnModal">
+  <div class="modal">
+    <div class="ico">&#x1F50B;</div>
+    <h3>Knopfdruck</h3>
+    <p id="btnModalText">Druecke jetzt den POWER-Knopf am Scooter um die Verbindung zu bestaetigen.</p>
+    <button class="btn btn-purple" onclick="confirmBtn()">Knopf gedrueckt &rarr; Weiter</button>
+    <button class="btn btn-ghost" onclick="confirmBtn()">Ueberspringen</button>
+  </div>
+</div>
+
+<script>
+// ── Globals ──────────────────────────────────────────────────────────────────
+let gattServer   = null;
+let bleDevice    = null;
+let proto        = 'unknown';
+let actualKey    = null;
+let btnResolve   = null;
+let crypto       = null;   // NbCrypto instance
+
+// UUIDs
+const RX_LEGACY  = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+const TX_LEGACY  = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+const SVC_LEGACY = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+const SVC_NB     = '6e400001-0000-0000-006e-696e65626f74';
+const RX_NB      = '6e400002-0000-0000-006e-696e65626f74';
+const TX_NB      = '6e400004-0000-0000-006e-696e65626f74';
+const AUTH_W     = '6e400005-0000-0000-006e-696e65626f74';
+const AUTH_N     = '6e400006-0000-0000-006e-696e65626f74';
+
+const HEADER     = [0xA3, 0xA4];
+const CMD_GETKEY = 0x01;
+const CMD_UNLOCK = 0x05;
+const CMD_LOCK   = 0x15;
+const CMD_ERROR  = 0x10;
+
+const NB_CMD_INIT = hexToBytes('5AA5003D215B00');
+const NB_ACK_INIT = hexToBytes('5AA51E213D5B01');
+const NB_ACK_PRE  = hexToBytes('5AA500213D5C00');
+const NB_ACK_PING = hexToBytes('5AA500213D5C01');
+const NB_ACK_PAIR = hexToBytes('5AA500213D5D01');
+const NB_ACK_LEN  = NB_ACK_INIT.length;
+
+// ── CRC-8 ────────────────────────────────────────────────────────────────────
+const CRC8_TABLE = [
+  0,49,98,83,196,245,166,151,185,136,219,234,125,76,31,46,
+  67,114,33,16,135,182,229,212,250,203,152,169,62,15,92,109,
+  134,183,228,213,66,115,32,17,63,14,93,108,251,202,153,168,
+  197,244,167,150,1,48,99,82,124,77,30,47,184,137,218,235,
+  61,12,95,110,249,200,155,170,132,181,230,215,64,113,34,19,
+  126,79,28,45,186,139,216,233,199,246,165,148,3,50,97,80,
+  187,138,217,232,126,79,28,45,3,50,97,80,199,246,165,148,
+  248,201,154,171,60,13,94,111,65,112,35,18,133,180,231,214,
+  122,75,24,41,190,143,220,237,195,242,161,144,7,54,101,84,
+  57,8,91,106,253,204,159,174,128,177,226,211,68,117,38,23,
+  252,205,158,175,56,9,90,107,69,116,39,22,129,176,227,210,
+  191,142,221,236,123,74,25,40,6,55,100,85,194,243,160,145,
+  71,118,37,20,131,178,225,208,254,207,156,173,58,11,88,105,
+  4,53,102,87,192,241,162,147,189,140,223,238,121,72,27,42,
+  193,240,163,146,5,52,103,86,120,73,26,43,188,141,222,239,
+  130,179,224,209,70,119,36,21,59,10,89,104,255,206,157,172,
+];
+
+function reflect8(val) {
+  let r = 0;
+  for (let i = 0; i < 8; i++) if ((val >> i) & 1) r |= (1 << (7 - i));
+  return r & 0xFF;
+}
+
+function crc8(data) {
+  let crc = 0;
+  for (const b of data) crc = CRC8_TABLE[reflect8(b) ^ crc];
+  return reflect8(crc);
+}
+
+// ── Legacy packet helpers ────────────────────────────────────────────────────
+function buildLegacy(cmd, keyByte, data) {
+  const origRand = (Math.floor(Math.random() * 254) + 1) & 0xFF;
+  const randByte = (origRand + 50) & 0xFF;
+  const encKey   = (keyByte ^ origRand) & 0xFF;
+  const encCmd   = (cmd    ^ origRand) & 0xFF;
+  const encData  = data.map(b => (b ^ origRand) & 0xFF);
+  const payload  = [...HEADER, data.length, randByte, encKey, encCmd, ...encData];
+  return new Uint8Array([...payload, crc8(payload)]);
+}
+
+function decodeLegacy(msg) {
+  if (msg.length < 6 || msg[0] !== 0xA3 || msg[1] !== 0xA4) return null;
+  const length = msg[2];
+  const rand   = (msg[3] - 50) & 0xFF;
+  const cmd    = (msg[5] ^ rand) & 0xFF;
+  const data   = [];
+  for (let i = 0; i < length; i++) data.push((msg[6 + i] ^ rand) & 0xFF);
+  return { cmd, data };
+}
+
+// ── NbCrypto (JS port) ───────────────────────────────────────────────────────
+// Requires aes-js loaded below
+class NbCrypto {
+  constructor() {
+    this.name    = new Uint8Array(16);
+    this.sha1Key = new Uint8Array(16);
+    this.bleData = null;
+    this.appData = null;
+    this.it      = 0;
+    this.FW_DATA = hexToBytes('97CFB802844143DE56002B3B34780A5D');
+  }
+
+  setName(nameBytes) {
+    this.name = pad16(nameBytes);
+    this.sha1Key = this._calcSha1Key(this.name, this.FW_DATA);
+  }
+
+  setBleData(bleData) {
+    this.bleData = bleData;
+    this.sha1Key = this._calcSha1Key(this.name, bleData);
+  }
+
+  setAppData(appData) {
+    this.appData = appData;
+    this.sha1Key = this._calcSha1Key(appData, this.bleData);
+  }
+
+  encrypt(data) {
+    const plLen = data.length - 3;
+    const pl    = data.slice(3, 3 + plLen);
+    const result = new Uint8Array(plLen + 9);
+    result.set(data.slice(0, 3));
+
+    if (this.it === 0 || !this.bleData) {
+      const crc = crc16(pl);
+      const enc = this._cryptoNext(pl, this.sha1Key);
+      result.set(enc, 3);
+      result[plLen+3] = 0; result[plLen+4] = 0;
+      result[plLen+5] = crc[0]; result[plLen+6] = crc[1];
+      result[plLen+7] = 0; result[plLen+8] = 0;
+    } else {
+      this.it++;
+      const aesData = this._genAesData();
+      const enc = this._cryptoNext(pl, this.sha1Key, aesData.slice());
+      aesData[0]  = 0x59;
+      aesData[15] = plLen;
+      const crc = this._crcNext(data, this.sha1Key, aesData.slice());
+      result.set(enc, 3);
+      result[plLen+3] = crc[0]; result[plLen+4] = crc[1];
+      result[plLen+5] = crc[2]; result[plLen+6] = crc[3];
+      result[plLen+7] = (this.it & 0xff00) >> 8;
+      result[plLen+8] = (this.it & 0x00ff);
+    }
+    return result;
+  }
+
+  decrypt(data) {
+    const plLen  = data.length - 9;
+    const pl     = data.slice(3, 3 + plLen);
+    const result = new Uint8Array(plLen + 3);
+    result.set(data.slice(0, 3));
+    this.it = (data[data.length-2] << 8) + data[data.length-1];
+
+    if (this.it === 0 || !this.bleData) {
+      result.set(this._cryptoNext(pl, this.sha1Key), 3);
+    } else {
+      const aesData = this._genAesData();
+      result.set(this._cryptoNext(pl, this.sha1Key, aesData), 3);
+    }
+    return result;
+  }
+
+  _genAesData() {
+    const d = new Uint8Array(16);
+    d[0] = 1;
+    d[1] = (this.it >>> 24) & 0xFF;
+    d[2] = (this.it >>> 16) & 0xFF;
+    d[3] = (this.it >>>  8) & 0xFF;
+    d[4] = (this.it >>>  0) & 0xFF;
+    d.set(this.bleData.slice(0, 8), 5);
+    d[15] = 0;
+    return d;
+  }
+
+  _cryptoNext(inp, sha1Key, aesData = null) {
+    const result = new Uint8Array(inp.length);
+    let idx = 0, rem = inp.length;
+    const aes = new aesjs.AES(sha1Key);
+    while (rem > 0) {
+      const tmp = Math.min(rem, 16);
+      const xd1 = new Uint8Array(16);
+      xd1.set(inp.slice(idx, idx + tmp));
+      let aesKey;
+      if (!aesData) {
+        aesKey = aes.encrypt(this.FW_DATA);
+      } else {
+        aesData[15]++;
+        aesKey = aes.encrypt(aesData);
+      }
+      const xd = xor(xd1, aesKey, 16);
+      result.set(xd.slice(0, tmp), idx);
+      rem -= tmp; idx += tmp;
+    }
+    return result;
+  }
+
+  _crcNext(data, sha1Key, aesData) {
+    const aes = new aesjs.AES(sha1Key);
+    let aesKey = aes.encrypt(aesData);
+    const xd1 = new Uint8Array(16); xd1.set(data.slice(0, 3));
+    const xd2 = new Uint8Array(16); xd2.set(aesKey);
+    let xd = xor(xd1, xd2, 16);
+    aesKey = aes.encrypt(xd);
+    xd2.set(aesKey);
+
+    let plLen = data.length - 3, byteIdx = 3;
+    while (plLen > 0) {
+      const tmp = Math.min(plLen, 16);
+      const x1 = new Uint8Array(16); x1.set(data.slice(byteIdx, byteIdx + tmp));
+      xd = xor(x1, xd2, 16);
+      aesKey = aes.encrypt(xd);
+      xd2.set(aesKey);
+      plLen -= tmp; byteIdx += tmp;
+    }
+    aesData[0] = 1; aesData[15] = 0;
+    aesKey = aes.encrypt(aesData);
+    const x1 = new Uint8Array(16); x1.set(aesKey.slice(0, 4));
+    return xor(x1, xd2, 4);
+  }
+
+  _calcSha1Key(b1, b2) {
+    const data = new Uint8Array(32);
+    data.set(pad16(b1), 0);
+    data.set(pad16(b2), 16);
+    const hash = sha1(data);
+    return hash.slice(0, 16);
+  }
+}
+
+// ── Tiny SHA-1 ───────────────────────────────────────────────────────────────
+function sha1(msgBytes) {
+  let h0=0x67452301,h1=0xEFCDAB89,h2=0x98BADCFE,h3=0x10325476,h4=0xC3D2E1F0;
+  const ml = msgBytes.length * 8;
+  const msg = [...msgBytes, 0x80];
+  while (msg.length % 64 !== 56) msg.push(0);
+  for (let i = 7; i >= 0; i--) msg.push((ml / Math.pow(2, i*8)) & 0xFF);
+  for (let i = 0; i < msg.length; i += 64) {
+    const w = [];
+    for (let j = 0; j < 16; j++)
+      w[j] = (msg[i+j*4]<<24)|(msg[i+j*4+1]<<16)|(msg[i+j*4+2]<<8)|msg[i+j*4+3];
+    for (let j = 16; j < 80; j++) { const x=w[j-3]^w[j-8]^w[j-14]^w[j-16]; w[j]=(x<<1)|(x>>>31); }
+    let a=h0,b=h1,c=h2,d=h3,e=h4;
+    for (let j = 0; j < 80; j++) {
+      let f,k;
+      if      (j<20){f=(b&c)|((~b)&d);k=0x5A827999;}
+      else if (j<40){f=b^c^d;          k=0x6ED9EBA1;}
+      else if (j<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC;}
+      else          {f=b^c^d;          k=0xCA62C1D6;}
+      const tmp=(((a<<5)|(a>>>27))+f+e+k+w[j])>>>0;
+      e=d;d=c;c=((b<<30)|(b>>>2))>>>0;b=a;a=tmp;
+    }
+    h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;
+  }
+  const r = new Uint8Array(20);
+  [h0,h1,h2,h3,h4].forEach((h,i)=>{r[i*4]=(h>>>24)&0xFF;r[i*4+1]=(h>>>16)&0xFF;r[i*4+2]=(h>>>8)&0xFF;r[i*4+3]=h&0xFF;});
+  return r;
+}
+
+// ── CRC-16 (for NbCrypto first-pass) ─────────────────────────────────────────
+function crc16(data) {
+  let crc = 0xFFFF;
+  for (const b of data) {
+    crc ^= b;
+    for (let i = 0; i < 8; i++) crc = (crc & 1) ? (crc >>> 1) ^ 0xA001 : crc >>> 1;
+  }
+  return new Uint8Array([crc & 0xFF, (crc >> 8) & 0xFF]);
+}
+
+// ── Minimal AES-ECB (needed by NbCrypto) ─────────────────────────────────────
+// Using aes-js from CDN — loaded via script tag below
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function hexToBytes(hex) {
+  const b = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < b.length; i++) b[i] = parseInt(hex.slice(i*2,i*2+2),16);
+  return b;
+}
+function bytesToHex(b) { return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join(' '); }
+function xor(a, b, n) { const r=new Uint8Array(n); for(let i=0;i<n;i++) r[i]=a[i]^b[i]; return r; }
+function pad16(b) { const r=new Uint8Array(16); r.set(b.slice(0,16)); return r; }
+function randomBytes(n) { return crypto.getRandomValues(new Uint8Array(n)); }
+function arrEq(a, b) { if(a.length!==b.length) return false; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) return false; return true; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+function log(msg, kind='i') {
+  const box = document.getElementById('log');
+  const ts  = new Date().toLocaleTimeString('de',{hour12:false});
+  const div = document.createElement('div');
+  div.className = 'l'+kind;
+  div.innerHTML = `<span class="lts">${ts}</span>${msg.replace(/</g,'&lt;')}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── UI state ──────────────────────────────────────────────────────────────────
+function setStatus(state, label, key) {
+  const badge = document.getElementById('badge');
+  const text  = document.getElementById('badgeText');
+  badge.className = 'badge ' + {'off':'b-off','conn':'b-conn','ready':'b-ready'}[state];
+  text.textContent = label;
+  const pt = document.getElementById('protoTag');
+  pt.innerHTML = proto === 'modern'
+    ? '<span class="proto-tag t-modern">MODERN</span>'
+    : proto === 'legacy'
+      ? '<span class="proto-tag t-legacy">LEGACY</span>'
+      : '';
+}
+
+function setConnected(name) {
+  document.getElementById('deviceInfo').style.display = 'block';
+  document.getElementById('deviceName').textContent = name;
+  document.getElementById('configCard').style.display = 'none';
+  document.getElementById('controlCard').style.display = 'block';
+  setStatus('conn', 'Verbunden');
+}
+
+function setReady(keyLabel) {
+  setStatus('ready', `Bereit (${keyLabel})`);
+  document.getElementById('btnUnlock').disabled = false;
+  document.getElementById('btnLock').disabled   = false;
+  log(`Bereit! Key: ${keyLabel}`, 's');
+}
+
+function setDisconnected() {
+  gattServer = null; bleDevice = null; actualKey = null; crypto = null;
+  proto = 'unknown';
+  document.getElementById('deviceInfo').style.display = 'none';
+  document.getElementById('configCard').style.display = 'block';
+  document.getElementById('controlCard').style.display = 'none';
+  document.getElementById('btnUnlock').disabled = true;
+  document.getElementById('btnLock').disabled   = true;
+  setStatus('off', 'Getrennt');
+  log('Verbindung getrennt');
+}
+
+// ── Button modal ──────────────────────────────────────────────────────────────
+function waitForButton(text) {
+  return new Promise(resolve => {
+    btnResolve = resolve;
+    document.getElementById('btnModalText').textContent = text;
+    document.getElementById('btnModal').classList.add('show');
+  });
+}
+function confirmBtn() {
+  document.getElementById('btnModal').classList.remove('show');
+  if (btnResolve) { btnResolve(); btnResolve = null; }
+}
+
+// ── Scan & Connect ────────────────────────────────────────────────────────────
+async function doScan() {
+  if (!navigator.bluetooth) {
+    document.getElementById('notSupported').style.display = 'block';
+    log('Web Bluetooth nicht unterstuetzt!', 'e');
+    return;
+  }
+  try {
+    log('Suche Scooter...');
+    const mode = document.getElementById('modeSelect').value;
+    const services = [SVC_LEGACY, SVC_NB];
+    const device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: services
+    });
+    bleDevice = device;
+    device.addEventListener('gattserverdisconnected', () => setDisconnected());
+    log(`Geraet gewaehlt: ${device.name || device.id}`);
+    await doConnect(device, mode);
+  } catch(e) {
+    if (e.name !== 'NotFoundError') log(`Fehler: ${e.message}`, 'e');
+  }
+}
+
+async function doConnect(device, mode) {
+  try {
+    log('Verbinde...');
+    gattServer = await device.gatt.connect();
+    setConnected(device.name || device.id);
+    log(`Verbunden mit ${device.name}`, 's');
+
+    // detect protocol
+    const services = await gattServer.getPrimaryServices();
+    const allUUIDs = new Set();
+    for (const svc of services) {
+      allUUIDs.add(svc.uuid);
+      try {
+        const chars = await svc.getCharacteristics();
+        for (const c of chars) allUUIDs.add(c.uuid);
+      } catch(_){}
+    }
+
+    if (mode === 'auto') {
+      proto = (allUUIDs.has(AUTH_W) && allUUIDs.has(AUTH_N)) ? 'modern' : 'legacy';
+    } else {
+      proto = mode;
+    }
+    log(`Protokoll: ${proto}`);
+    setStatus('conn', 'Verbunden');
+
+    const key = document.getElementById('keyInput').value;
+    if (proto === 'modern') await runModernAuth();
+    else await runLegacyAuth(key);
+
+  } catch(e) {
+    log(`Verbindungsfehler: ${e.message}`, 'e');
+    setDisconnected();
+  }
+}
+
+async function doDisconnect() {
+  if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect();
+  else setDisconnected();
+}
+
+// ── Legacy Auth ───────────────────────────────────────────────────────────────
+async function runLegacyAuth(key) {
+  log('Legacy Auth gestartet...');
+  let svc, rxChar, txChar;
+
+  // try Ninebot-specific service first, fall back to Nordic UART
+  for (const [svcUUID, rx, tx] of [
+    [SVC_NB,     RX_NB,     TX_NB    ],
+    [SVC_LEGACY, RX_LEGACY, TX_LEGACY],
+  ]) {
+    try {
+      svc    = await gattServer.getPrimaryService(svcUUID);
+      rxChar = await svc.getCharacteristic(rx);
+      txChar = await svc.getCharacteristic(tx);
+      log(`Service: ${svcUUID.slice(0,8)}...`);
+      break;
+    } catch(_) { svc = null; }
+  }
+
+  if (!svc) { log('Kein passender Service gefunden!', 'e'); return; }
+
+  // Enable notify
+  await txChar.startNotifications();
+
+  const responsePromise = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Timeout')), 10000);
+    txChar.addEventListener('characteristicvaluechanged', e => {
+      const raw = new Uint8Array(e.target.value.buffer);
+      log(`RX: ${bytesToHex(raw)}`);
+      const dec = decodeLegacy(raw);
+      if (!dec) return;
+      log(`CMD=0x${dec.cmd.toString(16).padStart(2,'0')} DATA=${bytesToHex(dec.data)}`);
+      if (dec.cmd === CMD_GETKEY) {
+        clearTimeout(timer);
+        resolve(dec);
+      } else if (dec.cmd === CMD_ERROR) {
+        clearTimeout(timer);
+        reject(new Error('Scooter Fehler'));
+      }
+    });
+  });
+
+  // Button prompt
+  await waitForButton('Druecke falls noetig den Knopf am Scooter, dann Weiter.');
+
+  // Send GetKey
+  const pkt = buildLegacy(CMD_GETKEY, 0x00, [...new TextEncoder().encode(key)]);
+  log(`TX GetKey: ${bytesToHex(pkt)}`);
+  await rxChar.writeValueWithoutResponse(pkt);
+
+  try {
+    const resp = await responsePromise;
+    if (resp.data.length >= 2 && resp.data[0] === 0x01) {
+      actualKey = resp.data[1];
+      setReady(`0x${actualKey.toString(16).padStart(2,'0')}`);
+    } else {
+      log('Key abgelehnt - falscher Key-String?', 'e');
+    }
+  } catch(e) {
+    log(`Auth Fehler: ${e.message}`, 'e');
+    log('Tipp: Anderes Protokoll oder falscher Key', 'w');
+  }
+
+  window._rxChar = rxChar;
+  window._txChar = txChar;
+}
+
+// ── Legacy Unlock/Lock ────────────────────────────────────────────────────────
+async function doUnlock() {
+  if (proto === 'modern') { await doModernUnlock(); return; }
+  if (actualKey === null) { log('Kein Key!', 'e'); return; }
+  const pkt = buildLegacy(CMD_UNLOCK, actualKey, [1,1,1,1,1,1,1,1,1,1]);
+  log(`TX Unlock: ${bytesToHex(pkt)}`);
+  await window._rxChar.writeValueWithoutResponse(pkt);
+
+  // listen for ack
+  const ackP = new Promise(resolve => {
+    const timer = setTimeout(()=>resolve(null), 6000);
+    window._txChar.addEventListener('characteristicvaluechanged', e => {
+      const dec = decodeLegacy(new Uint8Array(e.target.value.buffer));
+      if (dec && dec.cmd === CMD_UNLOCK) { clearTimeout(timer); resolve(dec); }
+    });
+  });
+  const ack = await ackP;
+  if (ack && ack.data[0] === 0x01) log('Scooter entsperrt!', 's');
+  else if (ack) log('Unlock fehlgeschlagen', 'e');
+  else log('Keine Antwort (Timeout)', 'w');
+}
+
+async function doLock() {
+  if (proto === 'modern') { log('Lock (modern) noch nicht implementiert', 'w'); return; }
+  if (actualKey === null) { log('Kein Key!', 'e'); return; }
+  const pkt = buildLegacy(CMD_LOCK, actualKey, [1]);
+  log(`TX Lock: ${bytesToHex(pkt)}`);
+  await window._rxChar.writeValueWithoutResponse(pkt);
+  log('Lock-Command gesendet', 's');
+}
+
+// ── Modern Auth (NbCrypto) ────────────────────────────────────────────────────
+async function runModernAuth() {
+  if (typeof aesjs === 'undefined') {
+    log('aes-js nicht geladen!', 'e'); return;
+  }
+  log('Modern Auth (NbCrypto) gestartet...');
+  crypto = new NbCrypto();
+
+  try {
+    crypto.setName(new TextEncoder().encode(bleDevice.name || '').slice(0, 16));
+  } catch(_) {}
+
+  const appKey  = randomBytes(16);
+  let serial    = null;
+  let recvBuf   = new Uint8Array(0);
+  let stateName = 'init';
+
+  let svc      = await gattServer.getPrimaryService(SVC_NB);
+  let authW    = await svc.getCharacteristic(AUTH_W);
+  let authN    = await svc.getCharacteristic(AUTH_N);
+  let rxChar   = await svc.getCharacteristic(RX_NB);
+  let txChar;
+  try { txChar = await svc.getCharacteristic(TX_NB); } catch(_){}
+
+  await authN.startNotifications();
+
+  // State machine via events
+  const waitState = (target, timeout = 10000) => new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`Timeout warte auf ${target}`)), timeout);
+    const check = () => { if (stateName === target) { clearTimeout(timer); authN.removeEventListener('characteristicvaluechanged', handler); resolve(); } };
+    const handler = e => {
+      const raw = new Uint8Array(e.target.value.buffer);
+      log(`AUTH-RX: ${bytesToHex(raw)}`);
+      if (raw[0] === 0x5A && raw[1] === 0xA5) recvBuf = raw;
+      else { const tmp = new Uint8Array(recvBuf.length + raw.length); tmp.set(recvBuf); tmp.set(raw, recvBuf.length); recvBuf = tmp; }
+      try {
+        const dec = crypto.decrypt(recvBuf);
+        const exp = recvBuf.length > 2 ? recvBuf[2] + 7 : 0;
+        if (dec.length !== exp) return;
+        const cmd = dec.slice(0, NB_ACK_LEN);
+        const payload = dec.slice(NB_ACK_LEN);
+        log(`AUTH decoded cmd: ${bytesToHex(cmd)}`);
+        if (arrEq(cmd, NB_ACK_INIT)) {
+          const bleKey = payload.slice(0, 16);
+          serial = payload.slice(16);
+          crypto.setBleData(bleKey);
+          log(`BLE-Key: ${bytesToHex(bleKey)}`, 's');
+          log(`Serial: ${new TextDecoder().decode(serial)}`, 's');
+          stateName = 'ping'; check();
+        } else if (arrEq(cmd, NB_ACK_PRE) || arrEq(cmd, NB_ACK_PING)) {
+          if (stateName === 'ping') { crypto.setAppData(appKey); stateName = 'pair'; check(); }
+        } else if (arrEq(cmd, NB_ACK_PAIR)) {
+          stateName = 'done'; check();
+        }
+      } catch(_){}
+    };
+    authN.addEventListener('characteristicvaluechanged', handler);
+  });
+
+  const sendAuth = async (cmdBytes) => {
+    const enc = crypto.encrypt(cmdBytes);
+    log(`AUTH-TX: ${bytesToHex(enc)}`);
+    for (let off = 0; off < enc.length; off += 20) {
+      await authW.writeValueWithoutResponse(enc.slice(off, off + 20));
+      await sleep(80);
+    }
+  };
+
+  // Step 1: INIT
+  log('Schritt 1: INIT...');
+  await sendAuth(NB_CMD_INIT);
+  await waitState('ping');
+
+  // Step 2: PING
+  log('Schritt 2: PING...');
+  const pingCmd = new Uint8Array([...hexToBytes('5AA5103D215C00'), ...appKey]);
+  await sendAuth(pingCmd);
+  await waitState('pair');
+
+  // Step 3: Button
+  await waitForButton('Druecke den POWER-Knopf am Scooter um die Verbindung zu bestaetigen.');
+
+  // Step 4: PAIR (retry 3x)
+  log('Schritt 4: PAIR...');
+  for (let i = 0; i < 3; i++) {
+    const pairCmd = new Uint8Array([...hexToBytes('5AA50E3D215D00'), ...serial]);
+    await sendAuth(pairCmd);
+    try { await waitState('done', 5000); break; }
+    catch(_) { log(`PAIR Versuch ${i+1}/3...`, 'w'); }
+  }
+
+  if (stateName !== 'done') { log('Pairing fehlgeschlagen', 'e'); return; }
+
+  log('Authentifizierung erfolgreich!', 's');
+  window._authW  = authW;
+  window._rxChar = rxChar;
+  window._txChar = txChar;
+  setReady('modern');
+}
+
+async function doModernUnlock() {
+  if (!crypto) { log('Nicht authentifiziert!', 'e'); return; }
+  const unlockCmd = hexToBytes('5AA5043D2002710100');
+  const enc = crypto.encrypt(unlockCmd);
+  log(`TX Unlock (modern): ${bytesToHex(enc)}`);
+  for (let off = 0; off < enc.length; off += 20) {
+    await window._rxChar.writeValueWithoutResponse(enc.slice(off, off + 20));
+    await sleep(80);
+  }
+  log('Unlock-Command gesendet!', 's');
+}
+
+// ── Check Web Bluetooth support ───────────────────────────────────────────────
+if (!navigator.bluetooth) {
+  document.getElementById('notSupported').style.display = 'block';
+}
+</script>
+
+<!-- aes-js for NbCrypto AES-ECB -->
+<script src="https://cdn.jsdelivr.net/npm/aes-js@3.1.2/index.min.js"></script>
+</body>
+</html>
